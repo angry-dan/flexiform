@@ -29,9 +29,9 @@ class FlexiformElementUserMail extends FlexiformElement {
       '#type' => 'textfield',
       '#parents' => $parents,
       '#title' => $this->label(),
-      '#required' => FALSE,
+      '#required' => TRUE,
       '#default_value' => !empty($entity->mail) ? $entity->mail : $default,
-      '#maxlength' => 255,
+      '#maxlength' => EMAIL_MAX_LENGTH,
     );
 
     $form = parent::form($form, $form_state, $entity);
@@ -43,6 +43,29 @@ class FlexiformElementUserMail extends FlexiformElement {
    * Validate the form element.
    */
   public function formValidate($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
+
+    // Trim whitespace from mail, to prevent confusing 'e-mail not valid'
+    // warnings often caused by cutting and pasting.
+    $mail = trim($this->formExtractValues($form, $form_state, $entity));
+    $this->formSetValue($mail, $form, $form_state);
+
+    $uid = empty($entity->is_new) ? $entity->uid : 0;
+
+    // Validate the e-mail address, and check if it is taken by an existing
+    // user.
+    if ($error = user_validate_mail($mail)) {
+      form_set_error($this->getElementNamespace(), $error);
+    }
+    elseif ((bool) db_select('users')
+      ->fields('users', array('uid'))
+      ->condition('uid', $uid, '<>')
+      ->condition('mail', db_like($mail), 'LIKE')
+      ->range(0, 1)
+      ->execute()
+      ->fetchField()) {
+
+      form_set_error($this->getElementNamespace(), t('The e-mail address %email is already registered.', array('%email' => $mail)));
+    }
   }
 
   /**
@@ -57,12 +80,12 @@ class FlexiformElementUserMail extends FlexiformElement {
    * Extract the submitted values for this form element.
    */
   public function formExtractValues($form, &$form_state, $entity) {
-    $parents = $form['#parents'];
-    $parents[] = $this->getEntityNamespace();
-    $parents[] = 'mail';
+    $parents = $form[$this->getElementNamespace()]['#parents'];
+    return drupal_array_get_nested_value($form_state['values'], $parents);
+  }
 
-    $mail = drupal_array_get_nested_value($form_state['values'], $parents);
-    return $mail;
+  public function formSetValue($value, $form, &$form_state) {
+    form_set_value($form[$this->getElementNamespace()], $value, $form_state);
   }
 
   /**
