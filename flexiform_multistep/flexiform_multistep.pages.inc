@@ -53,7 +53,8 @@ function flexiform_multistep_wrapper($flexiform, $base_entity, $current_step = N
     }
   }
   uasort($form_info['forms'], 'drupal_sort_weight');
-  $last_step = end(array_keys($form_info['order']));
+  $t = array_keys($form_info['order']);
+  $last_step = end($t);
   $form_info['forms'][$last_step]['submit'] = 'flexiform_multistep_step_form_submit_redirect';
 
   // Cache important objects to maintain state between steps.
