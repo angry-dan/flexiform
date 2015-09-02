@@ -1334,19 +1334,20 @@ function flexiform_get_getter_parameter_combinations($parameters, $collated_item
   $key = key($parameters);
   $parameter = current($parameters);
   array_shift($parameters);
+  if (isset($collated_items[$parameter['entity_type']])) {
+    foreach ($collated_items[$parameter['entity_type']] as $item) {
+      $combination_so_far[$key] = $item;
 
-  foreach ($collated_items[$parameter['entity_type']] as $item) {
-    $combination_so_far[$key] = $item;
-
-    // If this is the last parameter then save the $combination to the list.
-    if (empty($parameters)) {
-      // Check for no duplicates.
-      if (count(array_unique($combination_so_far)) == count($combination_so_far)) {
-        $combinations[] = $combination_so_far;
+      // If this is the last parameter then save the $combination to the list.
+      if (empty($parameters)) {
+        // Check for no duplicates.
+        if (count(array_unique($combination_so_far)) == count($combination_so_far)) {
+          $combinations[] = $combination_so_far;
+        }
       }
-    }
-    else {
-      flexiform_get_getter_parameter_combinations($parameters, $collated_items, $combinations, $combination_so_far);
+      else {
+        flexiform_get_getter_parameter_combinations($parameters, $collated_items, $combinations, $combination_so_far);
+      }
     }
   }
 }
